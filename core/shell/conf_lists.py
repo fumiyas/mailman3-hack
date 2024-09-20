@@ -71,7 +71,7 @@ def cli(keys_str, list_patterns):
         conf = {"fqdn_listname": fqdn_listname}
 
         for key in dir(mlist):
-            if key.startswith("_") or key.endswith("_address"):
+            if key.startswith("_"):
                 continue
             elif keys and key not in keys:
                 continue
@@ -79,17 +79,15 @@ def cli(keys_str, list_patterns):
                 continue
 
             value = getattr(mlist, key)
+
             if isinstance(value, (bool, int, float, str)):
                 pass
             elif isinstance(value, (GeneratorType, MutableList)):
-                value = [v for v in value]
-            elif isinstance(value, enum.Enum):
+                value = list(value)
+            elif isinstance(value, (enum.Enum, datetime.timedelta)):
                 value = str(value)
-            elif isinstance(value, datetime.timedelta):
-                continue
-                ## FIXME
-                #value = str(value)
-                #...
+            elif key == 'acceptablealias':
+                value = [x.alias for x in value]
             else:
                 continue
 
