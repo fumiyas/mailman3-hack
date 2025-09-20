@@ -162,7 +162,7 @@ def mj_config_read(config_file):
                 if line.rstrip() == mark:
                     break
                 value += line
-            continue
+            config[key] = value
         else:
             raise MajoromoInvalidListConfigLineError(f"{config_file}: line {line_no}: {line!r}")
 
