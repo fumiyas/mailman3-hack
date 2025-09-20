@@ -148,6 +148,7 @@ def mj_config_read(config_file):
         if m := re.search(r"^(?P<key>\w+)\s*=\s*(?P<value>.*)$", line, re.ASCII):
             config[m["key"]] = m["value"].strip()
         elif m := re.search(r"^(?P<key>\w+)\s*<<\s*(?P<mark>\w+)\s*$", line, re.ASCII):
+            key = m["key"]
             mark = m["mark"]
             value = ""
             while line := f.readline():
@@ -156,14 +157,14 @@ def mj_config_read(config_file):
                     line = line.decode("UTF-8")
                 except UnicodeDecodeError as e:
                     raise MajordomoConfigUnicodeDecodeError(
-                        f"{config_file}: line {line_no}: {mark}: {line!r}"
+                        f"{config_file}: {key} << {mark}: line {line_no}: {line!r}"
                     ) from e
                 if line.rstrip() == mark:
                     break
                 value += line
             continue
         else:
-            raise MajoromoInvalidListConfigLineError(f"{config_file}: line {line_no}: {line}")
+            raise MajoromoInvalidListConfigLineError(f"{config_file}: line {line_no}: {line!r}")
 
     ## FIXME: Support ` `- or `:`-separated file names
     #config["restrict_post"] = [
@@ -200,8 +201,9 @@ def mj_config_read(config_file):
     default="outgoing",
     metavar="OUTGOING",
     help="""
-        Extra name for Majordomo `<listname>-<OUTGOING>` alias entry.
+        Extra name for Majordomo lists `<listname>-<OUTGOING>` alias entry.
     """,
+    show_default=True,
 )
 @click.option(
     "--majordomo-extra-names",
@@ -209,7 +211,8 @@ def mj_config_read(config_file):
     multiple=True,
     metavar="EXTRA",
     help="""
-        Extra name(s) for Majordomo `<listname>-<EXTRA>` `owner-<listname>-<EXTRA>` alias entries.
+        Extra name(s) for Majordomo lists `<listname>-<EXTRA>` and
+        `owner-<listname>-<EXTRA>` alias entries to ignore.
     """,
 )
 @click.option(
@@ -234,7 +237,8 @@ def mj_config_read(config_file):
     is_flag=True,
     default=False,
     help="""
-        Majordomo lists in aliases that has no <listname>.config file in data directory.
+        Majordomo lists in aliases that has no <listname>.config file in
+        the Majordomo data directory.
     """,
 )
 @click.argument(
