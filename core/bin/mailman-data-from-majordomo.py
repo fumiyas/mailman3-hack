@@ -93,7 +93,7 @@ class MajordomoConfigUnicodeDecodeError(Exception):
     pass
 
 
-class MajordomoInvalidConfigValue(Exception):
+class MajordomoInvalidConfigValueError(Exception):
     pass
 
 
@@ -397,7 +397,7 @@ def main(
                     mm_config["default_nonmember_action"] = "Action.reject"
                 case x:
                     ## FIXME: Read mj_config("restrict_post") files and add to mm_config["accept_these_nonmembers"]
-                    raise MajordomoInvalidConfigValue(f"{mj_config_file}: restrict_post={x}")
+                    raise MajordomoInvalidConfigValueError(f"{mj_config_file}: restrict_post={x}")
 
         match mj_config.get("who_access", "open"):
             case "open":
@@ -407,7 +407,7 @@ def main(
             case "closed":
                 mm_config["member_roster_visibility"] = "RosterVisibility.moderators"
             case x:
-                raise MajordomoInvalidConfigValue(f"{mj_config_file}: who_access={x}")
+                raise MajordomoInvalidConfigValueError(f"{mj_config_file}: who_access={x}")
 
         match mj_config.get("subscribe_policy", "open+confirm"):
             case "open" | "auto":
@@ -417,7 +417,7 @@ def main(
             case "closed":
                 mm_config["subscription_policy"] = "SubscriptionPolicy.moderate"
             case x:
-                raise MajordomoInvalidConfigValue(f"{mj_config_file}: subscribe_policy={x}")
+                raise MajordomoInvalidConfigValueError(f"{mj_config_file}: subscribe_policy={x}")
 
         match mj_config.get("unsubscribe_policy", "open"):
             case "open" | "auto":
@@ -427,7 +427,7 @@ def main(
             case "closed":
                 mm_config["unsubscription_policy"] = "SubscriptionPolicy.moderate"
             case x:
-                raise MajordomoInvalidConfigValue(f"{mj_config_file}: unsubscribe_policy={x}")
+                raise MajordomoInvalidConfigValueError(f"{mj_config_file}: unsubscribe_policy={x}")
 
         mm_config["subject_prefix"] = (
             mj_config.get("subject_prefix", "")
@@ -454,14 +454,14 @@ def main(
             case "list":
                 mm_config["archive_policy"] = "ArchivePolicy.private"
             case x:
-                raise MajordomoInvalidConfigValue(f"{mj_config_file}: index_access={x}")
+                raise MajordomoInvalidConfigValueError(f"{mj_config_file}: index_access={x}")
 
         mj_seq_file = f"{mj_lists_dir}/{list_name}.seq"
         mj_seq_str = open(mj_seq_file).read().strip()
         try:
             mm_config["post_id"] = int(mj_seq_str)
         except Exception as e:
-            raise MajordomoInvalidConfigValue(f"{mj_seq_file}: {mj_seq_str!r}") from e
+            raise MajordomoInvalidConfigValueError(f"{mj_seq_file}: {mj_seq_str!r}") from e
 
         mm_config_file = f"{mj_lists_dir}/{list_name}.mm.config.jsonl"
         mm_owners_file = f"{mj_lists_dir}/{list_name}.mm.owners.txt"
