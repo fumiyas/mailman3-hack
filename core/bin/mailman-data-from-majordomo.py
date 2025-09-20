@@ -514,7 +514,8 @@ def main(
             if not line.startswith('#') and line.strip()
         ]
         with open(mm_members_file, 'w') as f:
-            print(*mm_members, sep="\n", file=f)
+            if len(mm_members) > 0:
+                print(*mm_members, sep="\n", file=f)
 
     for name, entry in mj_aliases.items():
         logger.warning(f"Dangling alias entry: {entry['line']}")
