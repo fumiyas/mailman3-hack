@@ -231,7 +231,7 @@ def mj_config_read(config_file):
     multiple=True,
     metavar="NAME",
     help="""
-        Exclude specified list name(s).
+        Exclude specified alias name(s).
     """,
 )
 @click.option(
