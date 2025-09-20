@@ -236,7 +236,7 @@ def mj_config_read(config_file):
 )
 @click.option(
     "--exclude-list-name", "-x",
-    "list_name_excluded_csv",
+    "list_names_excluded_csv",
     multiple=True,
     metavar="NAME",
     help="""
@@ -269,7 +269,7 @@ def main(
     mm_domain_name, mm_owner_default,
     mj_target_lists_file, mj_outgoing_name, mj_extra_names_csv,
     alias_names_excluded_csv,
-    list_name_excluded_csv,
+    list_names_excluded_csv,
     ignore_no_majordomo_config_lists,
 ):
     if not mj_domain_name:
@@ -296,10 +296,10 @@ def main(
         for x in alias_names_excluded_csv
         for y in x.split(",")
     )
-    list_name_excluded = set(
+    list_names_excluded = set(
         y
         ## Split each items and flatten
-        for x in list_name_excluded_csv
+        for x in list_names_excluded_csv
         for y in x.split(",")
     )
 
@@ -359,7 +359,7 @@ def main(
         mj_outgoing_alias = mj_aliases.pop(mj_outgoing_name, None)
         mj_owners_alias = mj_aliases.pop(f"owner-{list_name}", None)
 
-        if list_name in list_name_excluded:
+        if list_name in list_names_excluded:
             continue
         if mj_target_list_names and list_name not in mj_target_list_names:
             continue
