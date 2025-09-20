@@ -97,7 +97,7 @@ class MajordomoInvalidConfigValueError(Exception):
     pass
 
 
-def file2aliases(aliases_file):
+def file2aliases(aliases_file, alias_names_excluded):
     f = open(aliases_file)
 
     aliases = {}
@@ -109,6 +109,8 @@ def file2aliases(aliases_file):
 
         m = ALIAS_RE.search(line)
 
+        if alias_names_excluded and m["name"] in alias_names_excluded:
+            continue
         if m["name"] in aliases:
             logger.warning(f"Duplicate alias entry: {line}")
 
@@ -224,6 +226,15 @@ def mj_config_read(config_file):
     """,
 )
 @click.option(
+    "--exclude-alias-name",
+    "alias_names_excluded_csv",
+    multiple=True,
+    metavar="NAME",
+    help="""
+        Exclude specified list name(s).
+    """,
+)
+@click.option(
     "--exclude-list-name", "-x",
     "list_name_excluded_csv",
     multiple=True,
@@ -257,6 +268,7 @@ def main(
     mj_aliases_file, mj_lists_dir, mj_domain_name,
     mm_domain_name, mm_owner_default,
     mj_target_lists_file, mj_outgoing_name, mj_extra_names_csv,
+    alias_names_excluded_csv,
     list_name_excluded_csv,
     ignore_no_majordomo_config_lists,
 ):
@@ -278,6 +290,12 @@ def main(
         for x in mj_extra_names_csv
         for y in x.split(",")
     )
+    alias_names_excluded = set(
+        y
+        ## Split each items and flatten
+        for x in alias_names_excluded_csv
+        for y in x.split(",")
+    )
     list_name_excluded = set(
         y
         ## Split each items and flatten
@@ -285,7 +303,7 @@ def main(
         for y in x.split(",")
     )
 
-    mj_aliases = file2aliases(mj_aliases_file)
+    mj_aliases = file2aliases(mj_aliases_file, alias_names_excluded)
     mj_list_names = set(
         x.removesuffix(".config")
         for x in os.listdir(mj_lists_dir)
