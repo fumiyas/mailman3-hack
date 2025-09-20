@@ -452,10 +452,13 @@ def main(
                 raise MajordomoInvalidConfigValueError(f"{mj_config_file}: unsubscribe_policy={x}")
 
         mm_config["subject_prefix"] = (
+            ## FIXME: Error or warn for other $VARNAME
             mj_config.get("subject_prefix", "")
             .replace("$LIST", list_name)
             .replace("$SEQNUM", "%d")
         )
+        if mm_config["subject_prefix"]:
+            mm_config["subject_prefix"] += " "
 
         if reply_to := mj_config.get("reply_to", ""):
             mm_config["first_strip_reply_to"] = True
