@@ -501,11 +501,11 @@ def main(
 
         with open(mm_owners_file, 'w') as f:
             ## FIXME: Validate owners email addresses
-            if mj_owners_alias:
+            if mj_owners_alias and len(mj_owners_alias["recipients"]) > 0:
                 print(*mj_owners_alias["recipients"], sep="\n", file=f)
             else:
                 if mm_owner_default:
-                    print(mm_owner_default)
+                    print(mm_owner_default, file=f)
 
         mj_outgoing_file = f"{mj_lists_dir}/{list_name}"
         mm_members = [
