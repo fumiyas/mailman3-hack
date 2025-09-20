@@ -459,12 +459,13 @@ def main(
 
         if reply_to := mj_config.get("reply_to", ""):
             mm_config["first_strip_reply_to"] = True
-            if reply_to == f"{list_name}@{mj_domain_name}" or reply_to == list_name:
+            if reply_to in (f"{list_name}@{mj_domain_name}", list_name):
                 mm_config["reply_goes_to_list"] = "ReplyToMunging.point_to_list"
-                mm_config["reply_to_address"] = reply_to
+                mm_config["reply_to_address"] = ""
             else:
                 mm_config["reply_goes_to_list"] = "ReplyToMunging.explicit_header_only"
-                mm_config["reply_to_address"] = ""
+                ## FIXME: Check if valid email address
+                mm_config["reply_to_address"] = reply_to
         else:
             mm_config["first_strip_reply_to"] = False
             mm_config["reply_goes_to_list"] = "ReplyToMunging.no_munging"
