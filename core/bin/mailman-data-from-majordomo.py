@@ -181,20 +181,27 @@ def mj_config_read(config_file):
 @click.command(
     help="""Generate OSSTech Mailman 3 lists data from Majordomo lists"""
 )
+@click.argument(
+    'mj_domain_name',
+    metavar="MAJORDOMO_DOMAIN_NAME",
+    required=True,
+)
+@click.argument(
+    'mj_aliases_file',
+    metavar="MAJORDOMO_ALIASES_FILE",
+    required=True,
+)
+@click.argument(
+    'mj_lists_dir',
+    metavar="MAJORDOMO_LISTS_DIR",
+    required=True,
+)
 @click.option(
     "--majordomo-target-lists-file",
     "mj_target_lists_file",
     metavar="FILE",
     help="""
         File contains target Majordomo lists names.
-    """,
-)
-@click.option(
-    "--majordomo-domain-name",
-    "mj_domain_name",
-    metavar="DOMAIN",
-    help="""
-        Majordomo lists domain name.
     """,
 )
 @click.option(
@@ -218,11 +225,29 @@ def mj_config_read(config_file):
     """,
 )
 @click.option(
+    "--majordomo-ignore-no-config-lists",
+    "mj_ignore_no_config_lists",
+    is_flag=True,
+    default=False,
+    help="""
+        Majordomo lists in aliases that has no <listname>.config file in
+        the Majordomo data directory.
+    """,
+)
+@click.option(
+    "--domain-name",
+    "mm_domain_name",
+    metavar="DOMAIN",
+    help="""
+        Mailman lists domain name.
+    """,
+)
+@click.option(
     "--default-owner",
     "mm_owner_default",
     metavar="EMAIL",
     help="""
-        Default list owner address if Majordomo list has no owner address.
+        Mailman list default owner address if Majordomo list has no owner address.
     """,
 )
 @click.option(
@@ -243,34 +268,18 @@ def mj_config_read(config_file):
         Exclude specified list name(s).
     """,
 )
-@click.option(
-    "--ignore-no-majordomo-config-lists",
-    is_flag=True,
-    default=False,
-    help="""
-        Majordomo lists in aliases that has no <listname>.config file in
-        the Majordomo data directory.
-    """,
-)
-@click.argument(
-    'mj_aliases_file',
-    required=True,
-)
-@click.argument(
-    'mj_lists_dir',
-    required=True,
-)
-@click.argument(
-    'mm_domain_name',
-    required=True,
-)
 def main(
-    mj_aliases_file, mj_lists_dir, mj_domain_name,
-    mm_domain_name, mm_owner_default,
-    mj_target_lists_file, mj_outgoing_name, mj_extra_names_csv,
+    mj_domain_name,
+    mj_aliases_file,
+    mj_lists_dir,
+    mj_target_lists_file,
+    mj_outgoing_name,
+    mj_extra_names_csv,
+    mj_ignore_no_config_lists,
+    mm_domain_name,
+    mm_owner_default,
     alias_names_excluded_csv,
     list_names_excluded_csv,
-    ignore_no_majordomo_config_lists,
 ):
     if not mj_domain_name:
         mj_domain_name = mm_domain_name
@@ -380,7 +389,7 @@ def main(
         try:
             mj_config = mj_config_read(mj_config_file)
         except FileNotFoundError:
-            if ignore_no_majordomo_config_lists:
+            if mj_ignore_no_config_lists:
                 logging.warning(f"Unable to read list config file: {mj_config_file} (ignored)")
                 continue
             logging.error(f"Unable to read list config file: {mj_config_file}")
