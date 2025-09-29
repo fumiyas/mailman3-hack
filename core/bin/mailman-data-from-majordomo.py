@@ -268,6 +268,14 @@ def mj_config_read(config_file):
         Mailman list default owner address if Majordomo list has no owner address.
     """,
 )
+@click.option(
+    "--override-conf",
+    "mm_override_conf_json",
+    metavar="JSON",
+    help="""
+        Mailman override configuration settings in JSON format.
+    """,
+)
 def main(
     mj_domain_name,
     mj_aliases_file,
@@ -280,6 +288,7 @@ def main(
     mj_alias_names_excluded_csv,
     mm_domain_name,
     mm_owner_default,
+    mm_override_conf_json,
 ):
     if not mj_domain_name:
         mj_domain_name = mm_domain_name
@@ -311,6 +320,9 @@ def main(
         for x in mj_list_names_excluded_csv
         for y in x.split(",")
     )
+
+    if mm_override_conf_json:
+        mm_override_conf = json.loads(mm_override_conf_json)
 
     mj_aliases = file2aliases(mj_aliases_file, mj_alias_names_excluded)
     mj_list_names = set(
@@ -498,6 +510,9 @@ def main(
             mm_conf["post_id"] = int(mj_seq_str)
         except Exception as e:
             raise MajordomoInvalidConfigValueError(f"{mj_seq_file}: {mj_seq_str!r}") from e
+
+        if mm_override_conf_json:
+            mm_conf.update(**mm_override_conf)
 
         mm_conf_file = f"{mj_lists_dir}/{list_name}.mm.conf.jsonl"
         mm_owners_file = f"{mj_lists_dir}/{list_name}.mm.owners.txt"
