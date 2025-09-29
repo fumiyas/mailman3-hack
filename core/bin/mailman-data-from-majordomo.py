@@ -398,7 +398,7 @@ def main(
             logging.error(f"Unable to read list config file: {mj_config_file}")
             raise
 
-        mm_config = {
+        mm_conf = {
             "fqdn_listname": f"{list_name}@{mm_domain_name}",
             "admin_immed_notify": True,
             "admin_notify_mchanges": mj_config.get("announcements", "yes") == "yes",
@@ -416,101 +416,101 @@ def main(
         }
 
         if mj_config.get("moderate", "no") == "yes":
-            mm_config["default_member_action"] = "Action.hold"
-            mm_config["default_nonmember_action"] = "Action.hold"
+            mm_conf["default_member_action"] = "Action.hold"
+            mm_conf["default_nonmember_action"] = "Action.hold"
         else:
-            mm_config["default_member_action"] = "Action.defer"
+            mm_conf["default_member_action"] = "Action.defer"
             ## FIXME: Support ` `- or `:`-separated file names
             match mj_config.get("restrict_post", ""):
                 case "":
-                    mm_config["default_nonmember_action"] = "Action.defer"
+                    mm_conf["default_nonmember_action"] = "Action.defer"
                 case x if x == list_name:
-                    mm_config["default_nonmember_action"] = "Action.reject"
+                    mm_conf["default_nonmember_action"] = "Action.reject"
                 case x:
-                    ## FIXME: Read mj_config("restrict_post") files and add to mm_config["accept_these_nonmembers"]
+                    ## FIXME: Read mj_config("restrict_post") files and add to mm_conf["accept_these_nonmembers"]
                     raise MajordomoInvalidConfigValueError(f"{mj_config_file}: restrict_post={x}")
 
         match mj_config.get("who_access", "open"):
             case "open":
-                mm_config["member_roster_visibility"] = "RosterVisibility.public"
+                mm_conf["member_roster_visibility"] = "RosterVisibility.public"
             case "list":
-                mm_config["member_roster_visibility"] = "RosterVisibility.members"
+                mm_conf["member_roster_visibility"] = "RosterVisibility.members"
             case "closed":
-                mm_config["member_roster_visibility"] = "RosterVisibility.moderators"
+                mm_conf["member_roster_visibility"] = "RosterVisibility.moderators"
             case x:
                 raise MajordomoInvalidConfigValueError(f"{mj_config_file}: who_access={x}")
 
         match mj_config.get("subscribe_policy", "open+confirm"):
             case "open" | "auto":
-                mm_config["subscription_policy"] = "SubscriptionPolicy.open"
+                mm_conf["subscription_policy"] = "SubscriptionPolicy.open"
             case "open+confirm" | "auto+confirm":
-                mm_config["subscription_policy"] = "SubscriptionPolicy.confirm"
+                mm_conf["subscription_policy"] = "SubscriptionPolicy.confirm"
             case "closed":
-                mm_config["subscription_policy"] = "SubscriptionPolicy.moderate"
+                mm_conf["subscription_policy"] = "SubscriptionPolicy.moderate"
             case x:
                 raise MajordomoInvalidConfigValueError(f"{mj_config_file}: subscribe_policy={x}")
 
         match mj_config.get("unsubscribe_policy", "open"):
             case "open" | "auto":
-                mm_config["unsubscription_policy"] = "SubscriptionPolicy.open"
+                mm_conf["unsubscription_policy"] = "SubscriptionPolicy.open"
             case "open+confirm" | "auto+confirm":
-                mm_config["unsubscription_policy"] = "SubscriptionPolicy.confirm"
+                mm_conf["unsubscription_policy"] = "SubscriptionPolicy.confirm"
             case "closed":
-                mm_config["unsubscription_policy"] = "SubscriptionPolicy.moderate"
+                mm_conf["unsubscription_policy"] = "SubscriptionPolicy.moderate"
             case x:
                 raise MajordomoInvalidConfigValueError(f"{mj_config_file}: unsubscribe_policy={x}")
 
         if mj_subject_prefix := mj_config.get("subject_prefix", ""):
-            mm_config["subject_prefix"] = (
+            mm_conf["subject_prefix"] = (
                 ## FIXME: Error or warn for other $VARNAME
                 (mj_subject_prefix + " ")
                 .replace("$LIST", list_name)
                 .replace("$SEQNUM", "%d")
             )
         else:
-            mm_config["subject_prefix"] = ""
+            mm_conf["subject_prefix"] = ""
 
         if reply_to := mj_config.get("reply_to", ""):
-            mm_config["first_strip_reply_to"] = True
+            mm_conf["first_strip_reply_to"] = True
             if reply_to in (f"{list_name}@{mj_domain_name}", list_name):
-                mm_config["reply_goes_to_list"] = "ReplyToMunging.point_to_list"
-                mm_config["reply_to_address"] = ""
+                mm_conf["reply_goes_to_list"] = "ReplyToMunging.point_to_list"
+                mm_conf["reply_to_address"] = ""
             else:
-                mm_config["reply_goes_to_list"] = "ReplyToMunging.explicit_header_only"
+                mm_conf["reply_goes_to_list"] = "ReplyToMunging.explicit_header_only"
                 ## FIXME: Check if valid email address
-                mm_config["reply_to_address"] = reply_to
+                mm_conf["reply_to_address"] = reply_to
         else:
-            mm_config["first_strip_reply_to"] = False
-            mm_config["reply_goes_to_list"] = "ReplyToMunging.no_munging"
-            mm_config["reply_to_address"] = ""
+            mm_conf["first_strip_reply_to"] = False
+            mm_conf["reply_goes_to_list"] = "ReplyToMunging.no_munging"
+            mm_conf["reply_to_address"] = ""
 
         match mj_config.get("index_access", "open"):
             case "open":
-                mm_config["archive_policy"] = "ArchivePolicy.public"
+                mm_conf["archive_policy"] = "ArchivePolicy.public"
             case "list":
-                mm_config["archive_policy"] = "ArchivePolicy.private"
+                mm_conf["archive_policy"] = "ArchivePolicy.private"
             case x:
                 raise MajordomoInvalidConfigValueError(f"{mj_config_file}: index_access={x}")
 
         mj_seq_file = f"{mj_lists_dir}/{list_name}.seq"
         mj_seq_str = open(mj_seq_file).read().strip()
         try:
-            mm_config["post_id"] = int(mj_seq_str)
+            mm_conf["post_id"] = int(mj_seq_str)
         except Exception as e:
             raise MajordomoInvalidConfigValueError(f"{mj_seq_file}: {mj_seq_str!r}") from e
 
-        mm_config_file = f"{mj_lists_dir}/{list_name}.mm.config.jsonl"
+        mm_conf_file = f"{mj_lists_dir}/{list_name}.mm.conf.jsonl"
         mm_owners_file = f"{mj_lists_dir}/{list_name}.mm.owners.txt"
         ## FIXME: Write mj_config.get("moderator", "").split(",") to mm_moderator_file
         #mm_moderators_file = f"{mj_lists_dir}/{list_name}.mm.moderators.txt"
         mm_members_file = f"{mj_lists_dir}/{list_name}.mm.members.txt"
         with contextlib.suppress(FileNotFoundError):
-            os.remove(mm_config_file)
+            os.remove(mm_conf_file)
             os.remove(mm_owners_file)
             os.remove(mm_members_file)
 
-        with open(mm_config_file, 'w') as f:
-            print(json.dumps(mm_config), file=f)
+        with open(mm_conf_file, 'w') as f:
+            print(json.dumps(mm_conf), file=f)
 
         with open(mm_owners_file, 'w') as f:
             ## FIXME: Validate owners email addresses
