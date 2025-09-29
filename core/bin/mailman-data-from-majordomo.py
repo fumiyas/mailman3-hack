@@ -205,6 +205,15 @@ def mj_config_read(config_file):
     """,
 )
 @click.option(
+    "--majordomo-exclude-list-name", "-x",
+    "mj_list_names_excluded_csv",
+    multiple=True,
+    metavar="NAME",
+    help="""
+        Exclude specified list name(s).
+    """,
+)
+@click.option(
     "--majordomo-outgoing-name",
     "mj_outgoing_name",
     default="outgoing",
@@ -235,6 +244,15 @@ def mj_config_read(config_file):
     """,
 )
 @click.option(
+    "--majordomo-exclude-alias-name",
+    "mj_alias_names_excluded_csv",
+    multiple=True,
+    metavar="NAME",
+    help="""
+        Exclude specified alias name(s).
+    """,
+)
+@click.option(
     "--domain-name",
     "mm_domain_name",
     metavar="DOMAIN",
@@ -250,36 +268,18 @@ def mj_config_read(config_file):
         Mailman list default owner address if Majordomo list has no owner address.
     """,
 )
-@click.option(
-    "--exclude-alias-name",
-    "alias_names_excluded_csv",
-    multiple=True,
-    metavar="NAME",
-    help="""
-        Exclude specified alias name(s).
-    """,
-)
-@click.option(
-    "--exclude-list-name", "-x",
-    "list_names_excluded_csv",
-    multiple=True,
-    metavar="NAME",
-    help="""
-        Exclude specified list name(s).
-    """,
-)
 def main(
     mj_domain_name,
     mj_aliases_file,
     mj_lists_dir,
     mj_target_lists_file,
+    mj_list_names_excluded_csv,
     mj_outgoing_name,
     mj_extra_names_csv,
     mj_ignore_no_config_lists,
+    mj_alias_names_excluded_csv,
     mm_domain_name,
     mm_owner_default,
-    alias_names_excluded_csv,
-    list_names_excluded_csv,
 ):
     if not mj_domain_name:
         mj_domain_name = mm_domain_name
@@ -299,20 +299,20 @@ def main(
         for x in mj_extra_names_csv
         for y in x.split(",")
     )
-    alias_names_excluded = set(
+    mj_alias_names_excluded = set(
         y
         ## Split each items and flatten
-        for x in alias_names_excluded_csv
+        for x in mj_alias_names_excluded_csv
         for y in x.split(",")
     )
-    list_names_excluded = set(
+    mj_list_names_excluded = set(
         y
         ## Split each items and flatten
-        for x in list_names_excluded_csv
+        for x in mj_list_names_excluded_csv
         for y in x.split(",")
     )
 
-    mj_aliases = file2aliases(mj_aliases_file, alias_names_excluded)
+    mj_aliases = file2aliases(mj_aliases_file, mj_alias_names_excluded)
     mj_list_names = set(
         x.removesuffix(".config")
         for x in os.listdir(mj_lists_dir)
@@ -368,7 +368,7 @@ def main(
         mj_outgoing_alias = mj_aliases.pop(mj_outgoing_name, None)
         mj_owners_alias = mj_aliases.pop(f"owner-{list_name}", None)
 
-        if list_name in list_names_excluded:
+        if list_name in mj_list_names_excluded:
             continue
         if mj_target_list_names and list_name not in mj_target_list_names:
             continue
@@ -460,14 +460,15 @@ def main(
             case x:
                 raise MajordomoInvalidConfigValueError(f"{mj_config_file}: unsubscribe_policy={x}")
 
-        mm_config["subject_prefix"] = (
-            ## FIXME: Error or warn for other $VARNAME
-            mj_config.get("subject_prefix", "")
-            .replace("$LIST", list_name)
-            .replace("$SEQNUM", "%d")
-        )
-        if mm_config["subject_prefix"]:
-            mm_config["subject_prefix"] += " "
+        if mj_subject_prefix := mj_config.get("subject_prefix", ""):
+            mm_config["subject_prefix"] = (
+                ## FIXME: Error or warn for other $VARNAME
+                (mj_subject_prefix + " ")
+                .replace("$LIST", list_name)
+                .replace("$SEQNUM", "%d")
+            )
+        else:
+            mm_config["subject_prefix"] = ""
 
         if reply_to := mj_config.get("reply_to", ""):
             mm_config["first_strip_reply_to"] = True
